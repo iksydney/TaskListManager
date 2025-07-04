@@ -7,6 +7,7 @@ using TaskListManager.API.Extensions;
 using TaskListManager.API.MappingConfigurations;
 using TaskListManager.Business.Factory;
 using TaskListManager.Business.Implementation;
+using TaskListManager.Data.ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Host.UseSerilog();
 
 try
 {
+    services.AddSingleton(config.GetSection("AppSettings").Get<AppSettings>());
+
     #region
     var mappingConfiguration = new MapperConfiguration(c =>
     {

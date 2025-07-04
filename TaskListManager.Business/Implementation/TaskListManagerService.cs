@@ -11,21 +11,21 @@ namespace TaskListManager.Business.Implementation
     public class TaskListManagerService : ITaskListManagerService
     {
         private readonly IHttpService _httpService;
-        private const string BaseUrl = "https://686626a889803950dbb16571.mockapi.io";
-        private const string RequestUri = "/api/TaskLists";
         private readonly IMapper _mapper;
         private readonly ILogger<TaskListManagerService> _logger;
-        public TaskListManagerService(IHttpService httpService, IMapper mapper, ILogger<TaskListManagerService> logger)
+        private readonly AppSettings _appsettings;
+        public TaskListManagerService(IHttpService httpService, IMapper mapper, ILogger<TaskListManagerService> logger, AppSettings appsettings)
         {
             _httpService = httpService;
             _mapper = mapper;
             _logger = logger;
+            _appsettings = appsettings;
         }
         public async Task<Response<List<TaskViewModel>>> GetAllTasks()
         {
             try
             {
-                var tasks = await _httpService.Get<List<TaskModel>>(BaseUrl, RequestUri, null, null);
+                var tasks = await _httpService.Get<List<TaskModel>>(_appsettings.MockAPIBaseURL, _appsettings.ResourceURI, null, null);
                 var mappedTasks = _mapper.Map<List<TaskViewModel>>(tasks);
                 return Response<List<TaskViewModel>>.Success(mappedTasks);
             }
@@ -44,7 +44,9 @@ namespace TaskListManager.Business.Implementation
 
             try
             {
-                var task = await _httpService.Get<TaskModel>(BaseUrl, $"{RequestUri}/{id}", null, null);
+                var task = await _httpService.Get<TaskModel>(_appsettings.MockAPIBaseURL, $"{_appsettings.ResourceURI}/{id}", null, null);
+                if (task == null)
+                    return Response<TaskViewModel>.Failed("Task not found");
                 var mappedTask = _mapper.Map<TaskViewModel>(task);
                 return Response<TaskViewModel>.Success(mappedTask);
             }
@@ -66,7 +68,7 @@ namespace TaskListManager.Business.Implementation
                 var taskModel = _mapper.Map<TaskModel>(createTaskDto);
                 var json = JsonConvert.SerializeObject(taskModel);
 
-                var createdTask = await _httpService.Post<TaskModel>(json, BaseUrl, RequestUri, null, null);
+                var createdTask = await _httpService.Post<TaskModel>(json, _appsettings.MockAPIBaseURL, _appsettings.ResourceURI, null, null);
                 var mappedTask = _mapper.Map<TaskViewModel>(createdTask);
 
                 return Response<TaskViewModel>.Success(mappedTask, "Task created successfully");
@@ -91,11 +93,11 @@ namespace TaskListManager.Business.Implementation
 
             try
             {
-                var existingTask = await _httpService.Get<TaskModel>(BaseUrl, $"{RequestUri}/{id}", null, null);
+                var existingTask = await _httpService.Get<TaskModel>(_appsettings.MockAPIBaseURL, $"{_appsettings.ResourceURI}/{id}", null, null);
                 _mapper.Map(updateTaskDto, existingTask);
 
                 var json = JsonConvert.SerializeObject(existingTask);
-                var updatedTask = await _httpService.Put<TaskModel>(json, BaseUrl, $"{RequestUri}/{id}", null, null);
+                var updatedTask = await _httpService.Put<TaskModel>(json, _appsettings.MockAPIBaseURL, $"{_appsettings.ResourceURI}/{id}", null, null);
 
                 var mappedTask = _mapper.Map<TaskViewModel>(updatedTask);
                 return Response<TaskViewModel>.Success(mappedTask, "Task updated successfully");
@@ -115,7 +117,7 @@ namespace TaskListManager.Business.Implementation
 
             try
             {
-                await _httpService.Delete<TaskModel>(string.Empty, BaseUrl, $"{RequestUri}/{id}", null, null);
+                await _httpService.Delete<TaskModel>(string.Empty, _appsettings.MockAPIBaseURL, $"{_appsettings.ResourceURI}/{id}", null, null);
                 return Response<bool>.Success(true, "Task deleted successfully");
             }
             catch (Exception ex)
